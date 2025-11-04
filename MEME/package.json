@@ -7,5 +7,9 @@
     "ethers": "^6.15.0",
     "hardhat": "^2.26.5",
     "hardhat-deploy": "^1.0.4"
+  },
+  "dependencies": {
+    "@uniswap/lib": "^4.0.1-alpha",
+    "dotenv": "^17.2.3"
   }
 }

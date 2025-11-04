@@ -12,14 +12,13 @@
 
 ```bash
 # 安装 Node.js 依赖
-npm install --save-dev hardhat@2.26.5
-npm install --save-dev @openzeppelin/contracts @nomiclabs/hardhat-ether hardhat-deploy ethers
+npm install --save-dev @openzeppelin/contracts @nomicfoundation/hardhat-ethers hardhat-deploy ethers
 
 # 安装 Uniswap 依赖（用于本地测试）
 npm install --save-dev @uniswap/v2-core @uniswap/v2-periphery
 
-# 初始化hardhat项目
-npx hardhat init
+# package.json已经指定了依赖，直接执行以下命令即可
+npm install
 ```
 
 ### 2. 配置文件
@@ -29,7 +28,6 @@ npx hardhat init
 ```javascript
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-ethers");
-require("@openzeppelin/hardhat-upgrades")
 require('hardhat-deploy');
 require("dotenv").config();
 
@@ -63,7 +61,6 @@ module.exports = {
 ```bash
 INFURA_API_KEY=infura_api_key
 PRIVATE_KEY=private_key
-LIQUIDITY_WALLET=liquidity_wallet_address
 ```
 
 ## 合约部署
