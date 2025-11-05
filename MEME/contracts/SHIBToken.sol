@@ -338,4 +338,8 @@ contract SHIBToken is ERC20, AccessControl, ReentrancyGuard, Pausable {
     function getLpLockDuration() external view returns (uint256) {
         return lpLockTimestamp - block.timestamp;
     }
+
+    function getMinDelayBetweenTx() external view returns (uint256) {
+        return minDelayBetweenTx;
+    }
 }

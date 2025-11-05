@@ -56,7 +56,7 @@ module.exports = {
 
 ### 3. 环境变量
 
-创建 `.env` 文件（里面内容需要替换为对应的正确key、流动性钱包地址）:
+创建 `.env` 文件（里面内容需要替换为对应的正确key）:
 
 ```bash
 INFURA_API_KEY=infura_api_key
@@ -73,6 +73,9 @@ npx hardhat node
 
 # 在另一个终端中部署合约
 npx hardhat run scripts/deploy.js --network localhost
+
+# 在另一个终端中测试合约
+npx hardhat test test/SHIBToken.test.js --network localhost
 ```
 
 ### 2. 测试网部署

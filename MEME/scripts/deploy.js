@@ -103,17 +103,17 @@ async function main() {
     const taxTx = await token.proposeSetTaxBps(
         tokenConfig.buyTaxBps,
         tokenConfig.sellTaxBps,
-         { gasLimit: 300000 } // 手动设置gas限制（根据实际消耗调整）
+        { gasLimit: 300000 } // 手动设置gas限制（根据实际消耗调整）
     );
     const receipt = await taxTx.wait();
     console.log("交易确认区块号：", receipt.blockNumber);
     const provider = ethers.provider;
     const block = await provider.getBlock(receipt.blockNumber)
     console.log("交易区块时间：", block.timestamp.toString());
-    let[buyTaxBps, sellTaxBps] = await token.getTax()
+    let [buyTaxBps, sellTaxBps] = await token.getTax()
     console.log("提案修改税率后，buyTaxBps:", buyTaxBps.toString(), "sellTaxBps:", sellTaxBps.toString());
 
-    console.log("⏳ 延迟10秒,执行修改税率...");
+    console.log("\n⏳ 延迟10秒,执行修改税率...");
     await sleep(10000);
     const execTaxTx = await token.executeSetTaxBps(
         tokenConfig.buyTaxBps,
@@ -122,58 +122,25 @@ async function main() {
     );
     await execTaxTx.wait();
     console.log("✅ 执行提案修改税率完成");
+
+    // 验证配置
+    console.log("\n🔍 查询合约配置...");
     [buyTaxBps, sellTaxBps] = await token.getTax()
     console.log("修改税率后，buyTaxBps:", buyTaxBps.toString(), "sellTaxBps:", sellTaxBps.toString());
+    const [liquidityBps, treasuryBps, burnBps] = await token.getTaxDistribute();
+    console.log("📊 税率分配流动性比例：", liquidityBps.toString())
+    console.log("📊 税率分配国库比例：", treasuryBps.toString())
+    console.log("📊 税率分配销毁比例：", burnBps.toString())
 
+    // 保存部署信息到文件
+    const deploymentInfo = {
+        routerAddress: routerAddress,
+        contractAddress: token.target,
+        deployer: deployer.address,
+        network: (await provider.getNetwork()).name
+    };
 
-
-    // 税收分配设置
-    // console.log("📊 税收分配设置...");
-
-    // console.log("✅ 税收分配设置完成");
-
-    // // 设置交易限制
-    // console.log("🛡️ 设置交易限制...");
-    // const limitTx = await token.updateTradingRestrictions(
-    //     tokenConfig.maxTransaction,
-    //     tokenConfig.maxWallet,
-    //     tokenConfig.cooldown
-    // );
-    // await limitTx.wait();
-    // console.log("✅ 交易限制设置完成");
-
-    // // 验证配置
-    // console.log("\n🔍 验证合约配置...");
-
-    // const actualTaxRate = await token.taxRate();
-    // const actualLiquidityShare = await token.liquidityPoolShare();
-    // const actualMaxTx = await token.maxTransactionAmount();
-
-    // console.log("📊 实际税率:", actualTaxRate.toString(), "%");
-    // console.log("💧 流动性分配:", actualLiquidityShare.toString(), "%");
-    // console.log("📈 最大交易量:", ethers.utils.formatEther(actualMaxTx), "SSMT");
-
-    // // 保存部署信息到文件
-    // const deploymentInfo = {
-    //     contractAddress: token.address,
-    //     deployer: deployer.address,
-    //     network: (await ethers.provider.getNetwork()).name,
-    //     deploymentTime: new Date().toISOString(),
-    //     config: tokenConfig
-    // };
-
-    // console.log("\n📁 部署信息已保存");
-    // console.log("🌐 网络:", deploymentInfo.network);
-    // console.log("⏰ 部署时间:", deploymentInfo.deploymentTime);
-
-    // // 输出使用说明
-    // console.log("\n🎯 部署完成！下一步操作:");
-    // console.log("1. 将流动性池地址设置为合约的流动性池");
-    // console.log("2. 将重要地址（如DEX路由器）排除在税收和限制之外");
-    // console.log("3. 测试代币转账和税收功能");
-    // console.log("4. 配置前端应用集成");
-
-    // return deploymentInfo;
+    return deploymentInfo;
 }
 
 // 错误处理
@@ -184,4 +151,4 @@ main()
         process.exit(1);
     });
 
-// module.exports = { main };
+module.exports = { main };
