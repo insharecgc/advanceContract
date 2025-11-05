@@ -18,43 +18,43 @@ contract SHIBToken is ERC20, AccessControl, ReentrancyGuard, Pausable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     // ==================== 核心常量与角色 ====================
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");   // 管理员
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE"); // 紧急守护者
-    uint256 public constant MAX_SUPPLY = 1e15 * 10**18; // 1千万亿枚
-    address public immutable DEAD_WALLET = 0x000000000000000000000000000000000000dEaD;  // 销毁地址（无主地址，任何人都能在区块浏览器查询该地址的资产，确认代币确实被销毁，增强社区信任。）
-    uint256 public constant BPS_DENOMINATOR = 10000; // 万分数基数
+    bytes32 private constant ADMIN_ROLE = keccak256("ADMIN_ROLE");   // 管理员
+    bytes32 private constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE"); // 紧急守护者
+    uint256 private constant MAX_SUPPLY = 1e15 * 10**18; // 1千万亿枚
+    address private immutable DEAD_WALLET = 0x000000000000000000000000000000000000dEaD;  // 销毁地址（无主地址，任何人都能在区块浏览器查询该地址的资产，确认代币确实被销毁，增强社区信任。）
+    uint256 private constant BPS_DENOMINATOR = 10000; // 万分数基数
 
     // ==================== -Uniswap 配置 ====================
-    IUniswapV2Router02 public immutable uniswapRouter;  // 连接代币与交易市场的关键工具(主要功能：代币兑换、流动性管理、价格查询等)
-    address public immutable uniswapPair; // 交易对地址
-    bool public isSwapEnabled = false; // 自动添加流动性开关（部署后启用）
-    uint256 public swapThreshold = 100_000_000 * 10**18; // 触发自动添加流动性的阈值
+    IUniswapV2Router02 private immutable uniswapRouter;  // 连接代币与交易市场的关键工具(主要功能：代币兑换、流动性管理、价格查询等)
+    address private immutable uniswapPair; // 交易对地址
+    bool private isSwapEnabled = false; // 自动添加流动性开关（部署后启用）
+    uint256 private swapThreshold = 10_000_000 * 10**18; // 触发自动添加流动性的阈值
 
     // ==================== 税收与分配 ====================
-    uint256 public buyTaxBps = 500; // 买入税：5%
-    uint256 public sellTaxBps = 1000; // 卖出税：10%
-    uint256 public constant MAX_TAX_BPS = 2000; // 最高税率限制20%
+    uint256 private buyTaxBps = 500; // 买入税：5%
+    uint256 private sellTaxBps = 1000; // 卖出税：10%
+    uint256 private constant MAX_TAX_BPS = 2000; // 最高税率限制20%
 
-    uint256 public liquidityBps = 4000; // 40% 用于流动性（合约地址当做流动性池）
-    uint256 public treasuryBps = 3000; // 30% 国库
-    uint256 public burnBps = 3000; // 30% 销毁
-    address public treasury;    // 国库地址（用户运营/激励）
+    uint256 private liquidityBps = 4000; // 40% 用于流动性（合约地址当做流动性池）
+    uint256 private treasuryBps = 3000; // 30% 国库
+    uint256 private burnBps = 3000; // 30% 销毁
+    address private treasury;    // 国库地址（用户运营/激励）
     
     // ==================== 防操控机制 ====================
-    uint256 public maxTxPercent = 100; // 单笔最大交易占比（1%）
-    uint256 public minDelayBetweenTx = 30 seconds; // 同一地址交易间隔（防机器人）
-    mapping(address => uint256) public lastTxTime; // 记录每个地址上次交易时间
+    uint256 private maxTxPercent = 100; // 单笔最大交易占比（1%）
+    uint256 private minDelayBetweenTx = 20 seconds; // 同一地址交易间隔（防机器人）
+    mapping(address => uint256) private lastTxTime; // 记录每个地址上次交易时间
 
     // ==================== 权限与安全 ====================
     EnumerableSet.AddressSet private _whitelist; // 白名单（支持批量管理）
-    bool public isLpLocked = false; // LP锁定状态
-    uint256 public lpLockTimestamp; // LP锁定截止时间
+    bool private isLpLocked = false; // LP锁定状态
+    uint256 private lpLockTimestamp; // LP锁定截止时间
     mapping(address => bool) public isTaxExempt; // 免税地址（如国库、合约自身）
 
     // ==================== 时间锁（管理员操作延迟） ====================
-    uint256 public minLockLp = 365 days; // 最小LP锁定时间 (为了方便测试，这里支持构造函数传入修改)
-    uint256 public adminDelay = 48 hours; // 管理员操作延迟执行时间(为了方便测试，这里支持构造函数传入修改)
-    mapping(bytes32 => TimelockOperation) public timelockOperations; // 时间锁操作
+    uint256 private minLockLp = 365 days; // 最小LP锁定时间 (为了方便测试，这里支持构造函数传入修改)
+    uint256 private adminDelay = 48 hours; // 管理员操作延迟执行时间(为了方便测试，这里支持构造函数传入修改)
+    mapping(bytes32 => TimelockOperation) private timelockOperations; // 时间锁操作
 
     struct TimelockOperation {
         bool exists;
@@ -102,7 +102,12 @@ contract SHIBToken is ERC20, AccessControl, ReentrancyGuard, Pausable {
         treasury = _treasury;
         isTaxExempt[treasury] = true;
         isTaxExempt[address(this)] = true;
+        isTaxExempt[msg.sender] = true;
+
+        // 初始化白名单
         _whitelist.add(msg.sender);
+        _whitelist.add(address(this));
+        _whitelist.add(_router);
         _whitelist.add(uniswapPair);
         _whitelist.add(DEAD_WALLET);
     }
@@ -228,19 +233,74 @@ contract SHIBToken is ERC20, AccessControl, ReentrancyGuard, Pausable {
      * @dev 添加流动性
      */
     function _addLiquidity(uint256 tokenAmount, uint256 ethAmount) private {
+        // 授权路由器使用代币
         _approve(address(this), address(uniswapRouter), tokenAmount);
-
+        // 设置滑点容忍度  1%
+        uint256 minTokenAmount = (tokenAmount * 99) / 100; // 99% of tokenAmount
+        uint256 minETHAmount = (ethAmount * 99) / 100; // 99% of ethAmount
+        // 添加流动性
         uniswapRouter.addLiquidityETH{value: ethAmount}(
-            address(this),
-            tokenAmount,
-            0,
-            0,
-            DEAD_WALLET, // 流动性代币发送到销毁地址（永久锁定）
-            block.timestamp + 300
+            address(this),  // 代币地址
+            tokenAmount,    // 代币数量
+            minTokenAmount, // 最低代币数量
+            minETHAmount,   // 最低ETH数量
+            msg.sender, // 流动性代币发送到销毁地址（永久锁定）
+            block.timestamp + 300   // 交易截止时间
         );
     }
 
-    // ==================== 管理员功能（带时间锁） ====================
+    // ==================== 管理员功能 ====================
+    //添加初始流动性
+    function addInitialLiquidity(
+        uint256 tokenAmount,
+        uint256 ethAmount
+    ) external onlyRole(ADMIN_ROLE) {
+        require(
+            tokenAmount > 0 && ethAmount > 0,
+            "Amounts must be greater than zero"
+        );
+        require(
+            address(this).balance >= ethAmount,
+            "Not enough ETH in contract"
+        );
+        require(balanceOf(msg.sender) >= tokenAmount, "Not enough tokens");
+
+        // 转移代币到合约
+        _transfer(msg.sender, address(this), tokenAmount);
+        _addLiquidity(tokenAmount, ethAmount);
+    }
+
+    // 查询合约有多少代币
+    function getTokenBalance() external view returns (uint256) {
+        return balanceOf(address(this));
+    }
+
+    // 提取合约中的代币
+    function withdrawTokens(address to, uint256 amount) external onlyRole(ADMIN_ROLE) {
+        require(amount > 0, "Amount must be greater than zero");
+        require(balanceOf(address(this)) >= amount, "Insufficient balance");
+        super._transfer(address(this), to, amount);
+    }
+
+    // 查询合约中的ETH余额
+    function getETHBalance() external view returns (uint256) {
+        return address(this).balance;
+    }
+
+    // 提款ETH
+    function withdrawETH(address to, uint256 amount) external onlyRole(ADMIN_ROLE) {
+        require(amount > 0, "Amount must be greater than zero");
+        require(address(this).balance >= amount, "Insufficient balance");
+        payable(to).transfer(amount);
+    }
+
+    // 自毁合约
+    function selfDestruct() external onlyRole(ADMIN_ROLE) {
+        selfdestruct(payable(msg.sender));
+    }
+
+    // ==================== 时间锁功能 ====================
+
     // 提案修改税率（需延迟执行）
     function proposeSetTaxBps(uint256 _buyTax, uint256 _sellTax) external onlyRole(ADMIN_ROLE) returns (bytes32 opId) {
         require(_buyTax <= MAX_TAX_BPS && _sellTax <= MAX_TAX_BPS, "Tax exceeds max");
@@ -324,6 +384,10 @@ contract SHIBToken is ERC20, AccessControl, ReentrancyGuard, Pausable {
         return amount - (amount * taxBps) / BPS_DENOMINATOR;
     }
 
+    function getUniswapPair() external view returns (address) {
+        return uniswapPair;    
+    }
+
     function getTax() external view returns (uint256 _buyTaxBps, uint256 _sellTaxBps) {
         _buyTaxBps = buyTaxBps;
         _sellTaxBps = sellTaxBps;
@@ -342,4 +406,5 @@ contract SHIBToken is ERC20, AccessControl, ReentrancyGuard, Pausable {
     function getMinDelayBetweenTx() external view returns (uint256) {
         return minDelayBetweenTx;
     }
+    
 }

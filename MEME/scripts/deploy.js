@@ -96,6 +96,8 @@ async function main() {
     token.waitForDeployment();
 
     console.log("✅ 合约部署成功!");
+    const uniswapPairAddress = await token.getUniswapPair();
+    console.log("📄 Uniswap Pair 地址:", uniswapPairAddress);
     console.log("📄 合约地址:", token.target);  // 0x69767ED4926338e7c971eCFf6447Bc95b6E8fBE8
 
     // 提案修改税率
