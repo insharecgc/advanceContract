@@ -330,6 +330,10 @@ contract SHIBToken is ERC20, AccessControl, ReentrancyGuard, Pausable {
         emit TimelockOperationExecuted(opId);
     }
 
+    function updateSwapAndLiquifyEnabled(bool flag) external onlyRole(ADMIN_ROLE) {
+        isSwapEnabled = flag;
+    }
+
     // 锁定LP（防止开发者抽走初始流动性）
     function lockLP(uint256 lockDuration) external onlyRole(ADMIN_ROLE) {
         require(!isLpLocked, "Already locked");
@@ -397,6 +401,10 @@ contract SHIBToken is ERC20, AccessControl, ReentrancyGuard, Pausable {
         _liquidityBps = liquidityBps;
         _treasuryBps = treasuryBps;
         _burnBps = burnBps;  
+    }
+
+    function getSwapEnabled() external view returns (bool) {
+        return isSwapEnabled;
     }
 
     function getLpLockDuration() external view returns (uint256) {
