@@ -14,13 +14,16 @@
 # 安装 hardhat，本实例使用的2.26.5版本
 npm install hardhat@2.26.5
 
+# 初始化hardhat项目
+npx hardhat init
+
 # 安装 Node.js 依赖
-npm install --save-dev @openzeppelin/contracts @nomicfoundation/hardhat-ethers hardhat-deploy ethers
+npm install --save-dev @openzeppelin/contracts @nomicfoundation/hardhat-ethers@3.0.0 hardhat-deploy ethers
 
 # 安装 Uniswap 依赖（用于本地测试）
 npm install --save-dev @uniswap/v2-core @uniswap/v2-periphery
 
-# package.json已经指定了依赖，直接执行以下命令即可
+# package.json已经指定了依赖，直接执行以下命令即可（上面都不需要执行了）
 npm install
 ```
 
@@ -51,7 +54,7 @@ module.exports = {
     },
     sepolia: {
       url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      accounts: [process.env.PRIVATE_KEY]
+      accounts: [process.env.PRIVATE_KEY1, process.env.PRIVATE_KEY2, process.env.PRIVATE_KEY3, process.env.PRIVATE_KEY4]
     }
   }
 };
@@ -71,7 +74,7 @@ PRIVATE_KEY4=private_key4
 
 ## 合约部署
 
-### 1. 本地部署
+### 1. 本地部署（本地测试无法校验交易）
 
 ```bash
 # 启动本地网络
