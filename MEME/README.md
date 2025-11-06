@@ -11,8 +11,8 @@
 ### 1. 依赖安装
 
 ```bash
-# 安装 hardhat，本实例使用的2.26.5版本
-npm install hardhat@2.26.5
+# 安装 hardhat，本实例使用的2.27.0版本
+npm install hardhat@2.27.0
 
 # 初始化hardhat项目
 npx hardhat init
