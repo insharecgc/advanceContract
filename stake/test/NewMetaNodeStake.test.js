@@ -6,10 +6,9 @@ describe("NewMetaNodeStake 完整测试", function () {
     let MetaNodeStake;      // 可升级质押系统合约
     let metaNodeStake;      // 可升级质押系统合约实例
     let metaNodeStakeAddr;  // 可升级质押系统合约地址
-    let RewardToken;        // 奖励代币合约
+    let MockERC20;          // 奖励代币合约和测试用ERC20质押代币
     let rewardToken;        // 奖励代币合约实例
     let rewardTokenAddr;    // 奖励代币合约地址
-    let StakeToken;         // 测试用ERC20质押代币
     let stakeToken;         // 测试用ERC20质押代币实例
     let stakeTokenAddr;     // 测试用ERC20质押代币地址
     let owner, admin, upgrader, user1, user2; // 测试账户
@@ -23,15 +22,14 @@ describe("NewMetaNodeStake 完整测试", function () {
         [owner, admin, upgrader, user1, user2] = await ethers.getSigners();
         console.log("开始部署合约...");
         // 部署奖励代币（MetaNode）
-        RewardToken = await ethers.getContractFactory("MetaNode");
-        rewardToken = await RewardToken.deploy();
+        MockERC20 = await ethers.getContractFactory("MockERC20");
+        rewardToken = await MockERC20.deploy("MetaNodeToken", "MetaNode");
         await rewardToken.waitForDeployment();
         rewardTokenAddr = rewardToken.target;
         console.log("奖励代币合约地址:", rewardTokenAddr);
 
         // 部署测试用ERC20质押代币
-        StakeToken = await ethers.getContractFactory("StakeERC20");
-        stakeToken = await StakeToken.deploy();
+        stakeToken = await MockERC20.deploy("StakeToken", "ST");
         await stakeToken.waitForDeployment();
         stakeTokenAddr = stakeToken.target;
         console.log("测试用ERC20质押代币地址:", stakeTokenAddr);
@@ -232,7 +230,7 @@ describe("NewMetaNodeStake 完整测试", function () {
                 metaNodeStake.connect(user1).stake(ERC20_POOL_PID, stakeAmount)
             )
                 .to.emit(metaNodeStake, "Staked")
-                .withArgs(user1.address, ERC20_POOL_PID, stakeAmount, await getBlockNumber()+1);
+                .withArgs(user1.address, ERC20_POOL_PID, stakeAmount, await getBlockNumber() + 1);
 
             // 验证用户质押量
             const userStake = await metaNodeStake.userStakeInfos(user1.address, ERC20_POOL_PID);
@@ -251,7 +249,7 @@ describe("NewMetaNodeStake 完整测试", function () {
                 metaNodeStake.connect(user1).stakeEth({ value: stakeAmount })
             )
                 .to.emit(metaNodeStake, "EthStaked")
-                .withArgs(user1.address, stakeAmount, await getBlockNumber()+1);
+                .withArgs(user1.address, stakeAmount, await getBlockNumber() + 1);
 
             // 验证用户质押量
             const userStake = await metaNodeStake.userStakeInfos(user1.address, ETH_POOL_PID);
@@ -368,7 +366,7 @@ describe("NewMetaNodeStake 完整测试", function () {
                     user1.address,
                     ERC20_POOL_PID,
                     ethers.parseEther("200"),
-                    await getBlockNumber()+1
+                    await getBlockNumber() + 1
                 );
 
             // 验证用户余额增加
@@ -512,25 +510,32 @@ describe("NewMetaNodeStake 完整测试", function () {
         });
     });
 
+    // ============================== 直接向合约转ETH ==============================
+    describe("transfer ETH to MetaNodeStake", function () {
+        it("直接向质押合约转账会回退", function () {
+            const amount = ethers.parseEther("1.0");
+            expect(admin.sendTransaction({
+                to: metaNodeToken.target,
+                value: amount,
+            })).to.be.revertedWith("please use stakeEth function to stake ETH");
+        });
+    });
+
     // 7. UUPS升级权限测试
     // describe("UUPS升级权限", function () {
     //     it("只有UPGRADER_ROLE能升级合约", async function () {
     //         // 准备一个新的实现合约（仅用于测试升级权限）
-    //         const NewImplementation = await ethers.getContractFactory("NewMetaNodeStakeV2");
-    //         const newImpl = await NewImplementation.deploy();
-    //         await newImpl.waitForDeployment();
+    //         const NewMetaNodeStakeV2 = await ethers.getContractFactory("NewMetaNodeStakeV2");
 
     //         // 非升级角色尝试升级 → 失败
     //         await expect(
-    //             upgrades.upgradeProxy(metaNodeStakeAddr, newImpl, {
-    //                 deployer: user1, // 使用user1签名
+    //             upgrades.upgradeProxy(metaNodeStakeAddr, NewMetaNodeStakeV2, {
+    //                 from: user1.address, // 使用user1签名
     //             })
     //         ).to.be.reverted;
 
     //         // 升级角色升级 → 成功（不验证功能，仅验证权限）
-    //         await upgrades.upgradeProxy(metaNodeStakeAddr, newImpl, {
-    //             deployer: upgrader, // 使用upgrader签名
-    //         });
+    //         await upgrades.upgradeProxy(metaNodeStakeAddr, NewMetaNodeStakeV2);
     //     });
     // });
 
