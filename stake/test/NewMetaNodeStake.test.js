@@ -515,29 +515,11 @@ describe("NewMetaNodeStake 完整测试", function () {
         it("直接向质押合约转账会回退", function () {
             const amount = ethers.parseEther("1.0");
             expect(admin.sendTransaction({
-                to: metaNodeToken.target,
+                to: metaNodeStakeAddr,
                 value: amount,
             })).to.be.revertedWith("please use stakeEth function to stake ETH");
         });
     });
-
-    // 7. UUPS升级权限测试
-    // describe("UUPS升级权限", function () {
-    //     it("只有UPGRADER_ROLE能升级合约", async function () {
-    //         // 准备一个新的实现合约（仅用于测试升级权限）
-    //         const NewMetaNodeStakeV2 = await ethers.getContractFactory("NewMetaNodeStakeV2");
-
-    //         // 非升级角色尝试升级 → 失败
-    //         await expect(
-    //             upgrades.upgradeProxy(metaNodeStakeAddr, NewMetaNodeStakeV2, {
-    //                 from: user1.address, // 使用user1签名
-    //             })
-    //         ).to.be.reverted;
-
-    //         // 升级角色升级 → 成功（不验证功能，仅验证权限）
-    //         await upgrades.upgradeProxy(metaNodeStakeAddr, NewMetaNodeStakeV2);
-    //     });
-    // });
 
     // 辅助函数：获取当前区块号
     async function getBlockNumber() {
