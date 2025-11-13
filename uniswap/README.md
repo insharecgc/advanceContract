@@ -1,15 +1,20 @@
-### Uniswap V2 核心合约与外围路由接口文档
-### 目录
+# Uniswap V2 核心合约与外围路由接口文档
+# 目录
 [1. Uniswap V2 Core 接口文档](https://github.com/Uniswap/v2-core)
+
 [    - 1.1 UniswapV2Factory 合约](https://github.com/Uniswap/v2-core/blob/master/contracts/UniswapV2Factory.sol)
+
 [    - 1.2 UniswapV2Pair 合约](https://github.com/Uniswap/v2-core/blob/master/contracts/UniswapV2Pair.sol)
+
 [2. Uniswap V2 Periphery 接口文档](https://github.com/Uniswap/v2-periphery)
+
 [    - 2.1 UniswapV2Router02 合约](https://github.com/Uniswap/v2-periphery/blob/master/contracts/UniswapV2Router02.sol)
 
-### 1. Uniswap V2 Core 接口文档
+
+# 1. Uniswap V2 Core 接口文档
 核心合约包含 UniswapV2Factory（交易对工厂）和 UniswapV2Pair（交易对实例），是 Uniswap V2 协议的底层核心，实现了交易对创建、流动性管理和代币交换的核心逻辑。
 ## 1.1 UniswapV2Factory 合约
-# 1.1.1 状态变量
+### 1.1.1 状态变量
 | 变量名           | 类型                                       | 含义                                                         |
 | ---------------- | ------------------------------------------ | ------------------------------------------------------------ |
 | `feeTo`          | `address`                                  | 协议费用接收地址（默认为零地址，可通过 `setFeeTo` 方法修改）|
@@ -18,7 +23,7 @@
 | `allPairsLength` | `uint256`                                  | 已创建的交易对总数                                           |
 | `getPair`        | `mapping(address => mapping(address => address))` | 双代币地址到交易对地址的映射（不区分代币顺序，自动按字典序匹配） |
 
-# 1.1.2 核心函数
+### 1.1.2 核心函数
 `function createPair(address tokenA, address tokenB) external returns (address pair)`
 
 - **功能描述**：创建两个代币之间的交易对合约（若该交易对尚未存在）。
@@ -57,7 +62,7 @@
 - **异常情况**：非当前 feeToSetter 调用时，抛出 UniswapV2: FORBIDDEN。
 
 ## 1.2 UniswapV2Pair 合约
-# 1.2.1 状态变量
+### 1.2.1 状态变量
 | 变量名           | 类型      | 含义                                                         |
 | ---------------- | --------- | ------------------------------------------------------------ |
 | `factory`        | `address` | 部署该交易对的 UniswapV2Factory 合约地址（不可修改）|
@@ -70,7 +75,7 @@
 | `price1CumulativeLast` | `uint256` | 代币 1 的价格累积值（`reserve0 / reserve1` 乘以时间差的累积，用于 TWAP） |
 | `kLast`          | `uint256` | 最后一次 √ 量乘积（`reserve0 * reserve1`，用于协议费用计算）|
 
-# 1.2.2 核心函数
+### 1.2.2 核心函数
 `function _mintFee(uint112 _reserve0, uint112 _reserve1) private returns (bool feeOn)`
  - **功能描述**：向交易对添加流动性，发行 LP 代币（流动性凭证）给指定地址。
  - **处理逻辑**：
