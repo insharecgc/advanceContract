@@ -113,7 +113,7 @@ contract NewMetaNodeStake is
     function initialize(
         address _rewardToken,
         uint256 _baseRewardPerBlock
-    ) external initializer {
+    ) public initializer {
         __AccessControl_init();
         __ReentrancyGuard_init();
         __UUPSUpgradeable_init();

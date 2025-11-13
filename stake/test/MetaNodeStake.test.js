@@ -615,18 +615,18 @@ describe("MetaNodeStake", function () {
             await expect(metaNodeStake.connect(user1).claim(999))
                 .to.be.revertedWith("invalid pid");
 
+            // 奖励代币不足（消耗完合约代币）
+            tx = await metaNodeStake.connect(owner).safeTransferMetaNode(owner.address, await metaNodeToken.balanceOf(metaNodeStake.target));
+            await tx.wait();
+            await mineBlocks(20);
+            await expect(metaNodeStake.connect(user1).claim(ETH_PID))
+                .to.be.revertedWith("insufficient MetaNode balance in contract");
+
             // 领取功能暂停时领取
             tx = await metaNodeStake.connect(admin).pauseClaim();
             await tx.wait();
             await expect(metaNodeStake.connect(user1).claim(ETH_PID))
                 .to.be.revertedWith("claim is paused");
-
-            // 奖励代币不足（消耗完合约代币）
-            // tx = await metaNodeToken.connect(owner).safeTransferMetaNode(owner.address, await metaNodeToken.balanceOf(metaNodeStake.target));
-            // await tx.wait();
-            // await mineBlocks(20);
-            // await expect(metaNodeStake.connect(user1).claim(ETH_PID))
-            //     .to.be.revertedWith("insufficient MetaNode balance in contract");
         });
     });
 
@@ -637,7 +637,7 @@ describe("MetaNodeStake", function () {
             expect(admin.sendTransaction({
                 to: metaNodeToken.target,
                 value: amount,
-            })).to.be.revertedWith("please use stakeEth function to stake ETH");
+            })).to.be.revertedWith("please use depositETH function to stake ETH");
         });
     });
 
@@ -694,17 +694,19 @@ describe("MetaNodeStake", function () {
             // 部署新实现合约
             const MetaNodeStakeV2 = await ethers.getContractFactory("MetaNodeStakeV2");
 
-            // 无升级权限的账户升级
-            const upgradeRole = await metaNodeStake.UPGRADE_ROLE();
-            expect(await metaNodeStake.hasRole(upgradeRole, nonAdmin.address)).to.be.false;
-            await expect(
-                upgrades.upgradeProxy(metaNodeStake.target, MetaNodeStakeV2, { from: nonAdmin.address })
-            ).to.be.reverted;
-
             // 有升级权限的账户升级
             await upgrades.upgradeProxy(metaNodeStake.target, MetaNodeStakeV2);
             const upgradeImplAddress = await upgrades.erc1967.getImplementationAddress(metaNodeStake.target);
             console.log("Upgrade MetaNodeStake implAddress:", upgradeImplAddress);
+
+            // 无升级权限的账户升级
+            const upgradeRole = await metaNodeStake.UPGRADE_ROLE();
+            expect(await metaNodeStake.hasRole(upgradeRole, nonAdmin.address)).to.be.false;
+            const TempMetaNodeStakeV2 = await ethers.getContractFactory("MetaNodeStakeV2", nonAdmin);
+            await expect(
+                upgrades.upgradeProxy(metaNodeStake.target, TempMetaNodeStakeV2)
+            ).to.be.reverted;
+
         });
     });
 

@@ -12,7 +12,7 @@ import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 /**
  * @title MetaNodeStake
- * @author 未知（请补充作者信息）
+ * @author MetaNode
  * @notice 多质押池Staking合约，支持ETH和ERC20代币质押，基于区块奖励分发MetaNode代币
  * @dev 采用可升级架构，实现角色控制、质押解锁等功能。奖励计算逻辑：
  *      用户待分配奖励 = （用户质押量 × 池累积奖励系数） - 已发放奖励 + 待领取奖励
@@ -833,7 +833,7 @@ contract MetaNodeStake is
 
     // ========== 接收ETH（用于ETH质押） ==========
     receive() external payable {
-        // 禁止直接向合约转账ETH，必须通过stakeEth函数
-        revert("please use stakeEth function to stake ETH");
+        // 禁止直接向合约转账ETH，必须通过depositETH函数
+        revert("please use depositETH function to stake ETH");
     }
 }
